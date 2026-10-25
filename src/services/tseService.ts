@@ -98,7 +98,7 @@ const generateFallbackData = (turno: 1 | 2, ufCode: string): ElectionData => {
       percNum: 50.9,
       eleito: true,
       situacao: 'Eleito',
-      foto: 'https://resultados.tse.jus.br/oficial/ele2026/6258/fotos/br/280001607829.jpeg',
+      foto: '/candidates/13.jpeg',
       cor: '#DC2626',
       posicao: 1,
     },
@@ -116,7 +116,7 @@ const generateFallbackData = (turno: 1 | 2, ufCode: string): ElectionData => {
       percNum: 49.1,
       eleito: false,
       situacao: 'Nao Eleito',
-      foto: 'https://resultados.tse.jus.br/oficial/ele2026/6258/fotos/br/280001618036.jpeg',
+      foto: '/candidates/22.jpeg',
       cor: '#2563EB',
       posicao: 2,
     },
@@ -142,7 +142,7 @@ export const fetchElectionData = async (turno: 1 | 2 = 2, uf: string = 'br'): Pr
 
   let raw: any = null;
 
-  // 1. Tenta via proxy reverso (Nginx em produção ou Vite em dev)
+  // 1. Tenta via proxy reverso (Nginx em produÃƒÂ§ÃƒÂ£o ou Vite em dev)
   try {
     const response = await fetch(proxyUrl, { cache: 'no-store' });
     if (response.ok) {
@@ -156,7 +156,7 @@ export const fetchElectionData = async (turno: 1 | 2 = 2, uf: string = 'br'): Pr
     // Continua para o acesso direto se o proxy falhar
   }
 
-  // 2. Se o proxy não retornou JSON, tenta conexão direta com TSE
+  // 2. Se o proxy nÃƒÂ£o retornou JSON, tenta conexÃƒÂ£o direta com TSE
   if (!raw) {
     try {
       const response = await fetch(directUrl, { cache: 'no-store' });
@@ -171,7 +171,7 @@ export const fetchElectionData = async (turno: 1 | 2 = 2, uf: string = 'br'): Pr
     }
   }
 
-  // 3. Fallback de resiliência caso a rede do cliente bloqueie conexão externa com o TSE
+  // 3. Fallback de resiliÃƒÂªncia caso a rede do cliente bloqueie conexÃƒÂ£o externa com o TSE
   if (!raw) {
     console.warn('TSE API indisponivel ou bloqueada por CORS; utilizando dados consolidados de contingencia.');
     return generateFallbackData(turno, ufCode);
@@ -224,7 +224,7 @@ export const fetchElectionData = async (turno: 1 | 2 = 2, uf: string = 'br'): Pr
   };
 
   const candidatosList: Candidate[] = [];
-  const fotoBaseUrl = '/tse-api/oficial/ele2026/' + cdEleicao + '/fotos/br';
+  // fotos servidas localmente em /candidates/
 
   if (raw.carg && raw.carg[0] && raw.carg[0].agr) {
     raw.carg[0].agr.forEach((agr: any) => {
@@ -259,7 +259,7 @@ export const fetchElectionData = async (turno: 1 | 2 = 2, uf: string = 'br'): Pr
             percNum,
             eleito: c.e === 's',
             situacao: c.st || (c.e === 's' ? 'Eleito' : ''),
-            foto: fotoBaseUrl + '/' + c.sqcand + '.jpeg',
+            foto: (c.n === '13' || (c.nmu && c.nmu.toUpperCase().includes('LULA'))) ? '/candidates/13.jpeg' : (c.n === '22' || (c.nmu && c.nmu.toUpperCase().includes('BOLSONARO'))) ? '/candidates/22.jpeg' : ('/candidates/' + c.n + '.jpeg'),
             cor,
             posicao: 0,
           });

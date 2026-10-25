@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Candidate } from '../types/tse';
 import { User, ChevronDown, ChevronUp, Award } from 'lucide-react';
 
@@ -22,12 +22,30 @@ export const CandidateDuel: React.FC<CandidateDuelProps> = ({
   const [img1Error, setImg1Error] = useState(false);
   const [img2Error, setImg2Error] = useState(false);
 
+  useEffect(() => {
+    setImg1Error(false);
+  }, [cand1?.num, cand1?.sqcand]);
+
+  useEffect(() => {
+    setImg2Error(false);
+  }, [cand2?.num, cand2?.sqcand]);
+
   if (!cand1 || !cand2) return null;
 
   const formatNum = (n: number) => new Intl.NumberFormat('pt-BR').format(n);
 
   const toggleExpand = (num: string) => {
     setExpandedCand(expandedCand === num ? null : num);
+  };
+
+  const getCandPhoto = (cand: Candidate) => {
+    if (cand.num === '13' || (cand.nomeUrna && cand.nomeUrna.toUpperCase().includes('LULA'))) {
+      return '/candidates/13.jpeg';
+    }
+    if (cand.num === '22' || (cand.nomeUrna && cand.nomeUrna.toUpperCase().includes('BOLSONARO'))) {
+      return '/candidates/22.jpeg';
+    }
+    return cand.foto || ('/candidates/' + cand.num + '.jpeg');
   };
 
   const isElected1 = cand1.eleito || (matematicamenteEleito && cand1.posicao === 1);
@@ -70,7 +88,7 @@ export const CandidateDuel: React.FC<CandidateDuelProps> = ({
             >
               {!img1Error ? (
                 <img
-                  src={cand1.foto}
+                  src={getCandPhoto(cand1)}
                   alt={cand1.nomeUrna}
                   onError={() => setImg1Error(true)}
                   className='w-full h-full object-cover rounded-full'
@@ -141,7 +159,7 @@ export const CandidateDuel: React.FC<CandidateDuelProps> = ({
             >
               {!img2Error ? (
                 <img
-                  src={cand2.foto}
+                  src={getCandPhoto(cand2)}
                   alt={cand2.nomeUrna}
                   onError={() => setImg2Error(true)}
                   className='w-full h-full object-cover rounded-full'

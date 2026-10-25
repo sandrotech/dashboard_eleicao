@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import type { Candidate } from '../types/tse';
 import { User, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -13,6 +13,16 @@ export const CandidatesList: React.FC<CandidatesListProps> = ({ candidatos, turn
 
   const handleImgError = (sqcand: string) => {
     setImgErrors((prev) => ({ ...prev, [sqcand]: true }));
+  };
+
+  const getCandPhoto = (cand: Candidate) => {
+    if (cand.num === '13' || (cand.nomeUrna && cand.nomeUrna.toUpperCase().includes('LULA'))) {
+      return '/candidates/13.jpeg';
+    }
+    if (cand.num === '22' || (cand.nomeUrna && cand.nomeUrna.toUpperCase().includes('BOLSONARO'))) {
+      return '/candidates/22.jpeg';
+    }
+    return cand.foto || ('/candidates/' + cand.num + '.jpeg');
   };
 
   return (
@@ -50,7 +60,7 @@ export const CandidatesList: React.FC<CandidatesListProps> = ({ candidatos, turn
                 <div className='w-8 h-8 rounded-full overflow-hidden bg-slate-200 border shrink-0' style={{ borderColor: cand.cor }}>
                   {!imgErrors[cand.sqcand] ? (
                     <img
-                      src={cand.foto}
+                      src={getCandPhoto(cand)}
                       alt={cand.nomeUrna}
                       onError={() => handleImgError(cand.sqcand)}
                       className='w-full h-full object-cover'
