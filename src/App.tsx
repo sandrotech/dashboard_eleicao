@@ -9,15 +9,17 @@ import { CandidatesList } from './components/CandidatesList';
 import { TimelineChart } from './components/TimelineChart';
 import { BrazilMap, type LegendItem } from './components/BrazilMap';
 import { useStatesData } from './hooks/useStatesData';
+import { useVisitorTracker } from './hooks/useVisitorTracker';
 import { REGIONS, UF_BY_SIGLA, type RegionId } from './data/geo';
 import { AlertTriangle, RefreshCw, ShieldCheck, MapPin, Compass, ArrowRight, RotateCcw } from 'lucide-react';
 
 const MAP_LEGEND: LegendItem[] = [
   { nome: 'Lula (PT)', cor: '#DC2626' },
-  { nome: 'Flávio Bolsonaro (PL)', cor: '#2563EB' },
+  { nome: 'FlÃ¡vio Bolsonaro (PL)', cor: '#2563EB' },
 ];
 
 export const App: React.FC = () => {
+  useVisitorTracker();
   const [turno, setTurno] = useState<1 | 2>(2);
   const [selectedUf, setSelectedUf] = useState<string>('br');
   const [selection, setSelection] = useState<MapSelection>({ kind: 'br' });
@@ -51,7 +53,7 @@ export const App: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Erro ao carregar dados do TSE:', err);
-      setError(err?.message || 'Erro ao conectar à API pública do TSE.');
+      setError(err?.message || 'Erro ao conectar Ã  API pÃºblica do TSE.');
     } finally {
       setIsLoading(false);
       setIsInitialLoading(false);
@@ -84,7 +86,7 @@ export const App: React.FC = () => {
     };
   }, [refreshInterval, loadData]);
 
-  // Sincroniza seleção do mapa com o dropdown de UF
+  // Sincroniza seleÃ§Ã£o do mapa com o dropdown de UF
   const handleSelectMap = (s: MapSelection) => {
     setSelection(s);
     if (s.kind === 'br') {
@@ -158,21 +160,21 @@ export const App: React.FC = () => {
             <div className='w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center animate-spin'>
               <RefreshCw className='w-5 h-5 text-slate-600' />
             </div>
-            <p className='text-xs font-semibold text-slate-600'>Carregando apuração oficial do TSE...</p>
+            <p className='text-xs font-semibold text-slate-600'>Carregando apuraÃ§Ã£o oficial do TSE...</p>
           </div>
         ) : (
           <div className='grid grid-cols-1 lg:grid-cols-12 gap-3.5 lg:gap-6 items-start'>
             
-            {/* COLUNA ESQUERDA: Mapa Interativo do Brasil & Regiões */}
+            {/* COLUNA ESQUERDA: Mapa Interativo do Brasil & RegiÃµes */}
             <section
               className={'lg:col-span-7 space-y-3 ' + (activeTab === 'mapa' ? 'block' : 'hidden lg:block')}
             >
-              {/* Barra de Filtros por Região */}
+              {/* Barra de Filtros por RegiÃ£o */}
               <div className='p-2 sm:p-2.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs'>
                 <div className='flex items-center justify-between mb-1.5 px-1'>
                   <span className='text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1'>
                     <Compass className='w-3.5 h-3.5 text-slate-400' />
-                    Explorar por Região
+                    Explorar por RegiÃ£o
                   </span>
                   {selection.kind !== 'br' && (
                     <button
@@ -180,7 +182,7 @@ export const App: React.FC = () => {
                       className='inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-md transition-colors cursor-pointer'
                     >
                       <RotateCcw className='w-3 h-3' />
-                      Visão Geral (Brasil)
+                      VisÃ£o Geral (Brasil)
                     </button>
                   )}
                 </div>
@@ -222,7 +224,7 @@ export const App: React.FC = () => {
                 legend={MAP_LEGEND}
               />
 
-              {/* Card de Informações Rápidas do Estado ou Região Focada */}
+              {/* Card de InformaÃ§Ãµes RÃ¡pidas do Estado ou RegiÃ£o Focada */}
               {focusedUfMeta && focusedUfData && (
                 <div className='p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between gap-3 animate-in fade-in duration-300'>
                   <div>
@@ -234,7 +236,7 @@ export const App: React.FC = () => {
                         {focusedUfMeta.nome}
                       </h4>
                       <span className='text-[11px] font-semibold text-slate-500'>
-                        • Urnas: {focusedUfData.stats.percSecoes}%
+                        â€¢ Urnas: {focusedUfData.stats.percSecoes}%
                       </span>
                     </div>
 
@@ -262,15 +264,15 @@ export const App: React.FC = () => {
               )}
             </section>
 
-            {/* COLUNA DIREITA: Apuração das Urnas & Duelo dos Candidatos */}
+            {/* COLUNA DIREITA: ApuraÃ§Ã£o das Urnas & Duelo dos Candidatos */}
             <section
               className={'lg:col-span-5 space-y-3.5 ' + (activeTab === 'painel' ? 'block' : 'hidden lg:block')}
             >
-              {/* Botão de atalho para o mapa no mobile */}
+              {/* BotÃ£o de atalho para o mapa no mobile */}
               <div className='lg:hidden p-2 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-between'>
                 <span className='text-xs font-bold text-slate-700 flex items-center gap-1.5'>
                   <MapPin className='w-3.5 h-3.5 text-emerald-600' />
-                  Visualização Geográfica
+                  VisualizaÃ§Ã£o GeogrÃ¡fica
                 </span>
                 <button
                   onClick={() => setActiveTab('mapa')}
@@ -326,7 +328,7 @@ export const App: React.FC = () => {
       <footer className='border-t border-slate-200/80 bg-white py-3 text-center text-[10px] text-slate-400 mt-auto'>
         <div className='w-full max-w-7xl mx-auto px-4 flex items-center justify-center gap-1.5'>
           <ShieldCheck className='w-3.5 h-3.5 text-emerald-600' />
-          <span>Dados Oficiais • Tribunal Superior Eleitoral (TSE)</span>
+          <span>Dados Oficiais â€¢ Tribunal Superior Eleitoral (TSE)</span>
         </div>
       </footer>
     </div>
