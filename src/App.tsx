@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchElectionData } from './services/tseService';
 import type { ElectionData } from './types/tse';
 import type { MapSelection } from './types/map';

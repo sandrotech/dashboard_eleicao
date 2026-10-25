@@ -24,7 +24,6 @@ const NEUTRAL = '#E2E8F0';
 const FULL: Box = { x: 0, y: 0, w: MAP_VIEWBOX.w, h: MAP_VIEWBOX.h };
 const RATIO = MAP_VIEWBOX.w / MAP_VIEWBOX.h;
 
-/** Caixa que envolve as formas, com folga e tamanho minimo, mantendo a proporcao do mapa. */
 function fitBox(boxes: Box[], pad: number, minSize: number): Box {
   const x0 = Math.min(...boxes.map((b) => b.x));
   const y0 = Math.min(...boxes.map((b) => b.y));
@@ -62,7 +61,6 @@ export const BrazilMap: React.FC<BrazilMapProps> = ({ states, selection, onSelec
 
   const box = useAnimatedViewBox(target);
 
-  // estados em foco desenhados por ultimo (ficam "elevados" sobre os vizinhos)
   const order = useMemo(
     () =>
       Object.keys(UF_SHAPES).sort((a, b) => {
@@ -75,8 +73,14 @@ export const BrazilMap: React.FC<BrazilMapProps> = ({ states, selection, onSelec
 
   const labelSize = box.w / 34;
   const showSmallLabels = box.w < 450;
-  const hoverData = hover ? states?.[hover] : undefined;
-  const hoverLead = leaderOf(hoverData);
+
+  // Estado atualmente em destaque no tooltip (hover ou selecionado)
+  const activeUf = hover || (selection.kind === 'uf' ? selection.uf : null);
+  const activeData = activeUf ? states?.[activeUf] : undefined;
+  const activeLead = leaderOf(activeData);
+  const activePercApurado = activeData?.stats?.percSecoesNum ?? 0;
+  const activePercFaltando = Math.max(0, +(100 - activePercApurado).toFixed(2));
+  const activeSecoesRestantes = Math.max(0, (activeData?.stats?.totalSecoes ?? 0) - (activeData?.stats?.secoesTotalizadas ?? 0));
 
   return (
     <div className="relative rounded-2xl bg-white border border-slate-200/90 shadow-xs overflow-hidden">
@@ -86,7 +90,7 @@ export const BrazilMap: React.FC<BrazilMapProps> = ({ states, selection, onSelec
           preserveAspectRatio="xMidYMid meet"
           className={'w-full h-full block touch-manipulation select-none' + (states ? '' : ' animate-pulse')}
           role="group"
-          aria-label="Mapa do Brasil com o resultado por estado"
+          aria-label="Mapa do Brasil com resultado e porcentagem de apuração das urnas por estado"
         >
           <rect
             x={-1000}
@@ -106,17 +110,28 @@ export const BrazilMap: React.FC<BrazilMapProps> = ({ states, selection, onSelec
             const stamp = changed[uf];
             const flashing = !!stamp && Date.now() - stamp < 4000;
             const nome = UF_BY_SIGLA[uf]?.nome ?? uf;
+            const percApurado = data?.stats?.percSecoesNum ?? 0;
+            const percFaltando = Math.max(0, +(100 - percApurado).toFixed(2));
+
+            // Graduação de opacidade: estados com poucas urnas apuradas ficam translúcidos,
+            // e vão se tornando 100% sólidos conforme a apuração consolida
+            const urnasOpacity = lead ? Math.min(1, Math.max(0.48, 0.45 + (percApurado / 100) * 0.55)) : 1;
+
             const cls = ['map-uf', isSel ? 'map-uf-selected' : '', flashing ? 'map-uf-flash' : '']
               .filter(Boolean)
               .join(' ');
             const label =
-              nome + (lead ? ', liderando: ' + firstName(lead.nomeUrna) + ' ' + lead.perc + '%' : ', sem votos apurados');
+              nome +
+              (lead
+                ? ', ' + percApurado.toFixed(1) + '% apurado (falta ' + percFaltando.toFixed(1) + '%), liderando: ' + firstName(lead.nomeUrna) + ' ' + lead.perc + '%'
+                : ', sem votos apurados');
             const pick = () => onSelect(isSel ? { kind: 'br' } : { kind: 'uf', uf });
             return (
               <path
                 key={uf + ':' + (stamp ?? 0)}
                 d={shape.d}
                 fill={lead ? lead.cor : NEUTRAL}
+                fillOpacity={lead ? urnasOpacity : 1}
                 fillRule="evenodd"
                 stroke={isSel ? '#0f172a' : '#ffffff'}
                 strokeWidth={isSel ? 2 : 1.2}
@@ -149,40 +164,93 @@ export const BrazilMap: React.FC<BrazilMapProps> = ({ states, selection, onSelec
           {order.map((uf) => {
             const shape = UF_SHAPES[uf];
             if (shape.small && !showSmallLabels) return null;
+            const data = states?.[uf];
+            const percApurado = data?.stats?.percSecoesNum ?? 0;
             const dim = focusSet !== null && !focusSet.has(uf);
+
             return (
-              <text
-                key={'t' + uf}
-                x={shape.cx}
-                y={shape.cy}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize={labelSize}
-                fontWeight={800}
-                fill="#ffffff"
-                stroke="rgba(15,23,42,0.55)"
-                strokeWidth={labelSize * 0.16}
-                paintOrder="stroke"
-                pointerEvents="none"
-                style={{ opacity: dim ? 0.25 : 1, transition: 'opacity .4s ease' }}
-              >
-                {uf}
-              </text>
+              <g key={'g' + uf} pointerEvents="none" style={{ opacity: dim ? 0.25 : 1, transition: 'opacity .4s ease' }}>
+                <text
+                  x={shape.cx}
+                  y={shape.cy - (percApurado > 0 && box.w < 600 ? labelSize * 0.3 : 0)}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fontSize={labelSize}
+                  fontWeight={800}
+                  fill="#ffffff"
+                  stroke="rgba(15,23,42,0.65)"
+                  strokeWidth={labelSize * 0.16}
+                  paintOrder="stroke"
+                >
+                  {uf}
+                </text>
+                {percApurado > 0 && box.w < 600 && (
+                  <text
+                    x={shape.cx}
+                    y={shape.cy + labelSize * 0.8}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={labelSize * 0.62}
+                    fontWeight={700}
+                    fill="#fef08a"
+                    stroke="rgba(15,23,42,0.8)"
+                    strokeWidth={labelSize * 0.12}
+                    paintOrder="stroke"
+                  >
+                    {Math.round(percApurado)}%
+                  </text>
+                )}
+              </g>
             );
           })}
         </svg>
 
-        {hover && (
-          <div className="pointer-events-none absolute left-2 top-2 rounded-lg bg-white/95 px-2.5 py-1.5 text-xs shadow-md border border-slate-200 anim-fade">
-            <span className="font-bold text-slate-900">{UF_BY_SIGLA[hover]?.nome ?? hover}</span>
-            <span className="text-slate-500"> · </span>
-            {hoverLead ? (
-              <span className="font-bold" style={{ color: hoverLead.cor }}>
-                {firstName(hoverLead.nomeUrna)} {hoverLead.perc}%
+        {/* Card flutuante com progresso exato de urnas apuradas e faltantes */}
+        {activeUf && activeData && (
+          <div className="absolute left-2.5 top-2.5 max-w-[280px] sm:max-w-xs rounded-xl bg-white/95 backdrop-blur-xs p-2.5 text-xs shadow-lg border border-slate-200 anim-fade z-10 space-y-1.5 pointer-events-none sm:pointer-events-auto">
+            <div className="flex items-center justify-between gap-1">
+              <span className="font-extrabold text-slate-900 text-sm">
+                {UF_BY_SIGLA[activeUf]?.nome ?? activeUf} ({activeUf})
               </span>
-            ) : (
-              <span className="text-slate-500">sem votos apurados</span>
-            )}
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
+                {activeData.stats.percSecoes}% apurado
+              </span>
+            </div>
+
+            {/* Barra de progresso visual de urnas */}
+            <div className="space-y-1">
+              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden flex">
+                <div
+                  className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                  style={{ width: activePercApurado + '%' }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-slate-600 font-medium">
+                <span className="text-amber-700 font-bold">
+                  Falta apurar {activePercFaltando.toFixed(2).replace('.', ',')}%
+                </span>
+                <span className="font-mono-num text-slate-400">
+                  {activeSecoesRestantes.toLocaleString('pt-BR')} urnas restantes
+                </span>
+              </div>
+            </div>
+
+            {/* Liderança de votos no estado */}
+            <div className="pt-1 border-t border-slate-100 flex items-center justify-between text-[11px]">
+              {activeLead ? (
+                <span className="font-bold flex items-center gap-1" style={{ color: activeLead.cor }}>
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: activeLead.cor }}></span>
+                  {firstName(activeLead.nomeUrna)} lidera ({activeLead.perc}%)
+                </span>
+              ) : (
+                <span className="text-slate-400">Sem votos apurados</span>
+              )}
+              {activeData.segundoColocado && (
+                <span className="text-slate-500 font-medium">
+                  2º: {firstName(activeData.segundoColocado.nomeUrna)} ({activeData.segundoColocado.perc}%)
+                </span>
+              )}
+            </div>
           </div>
         )}
 
@@ -190,7 +258,7 @@ export const BrazilMap: React.FC<BrazilMapProps> = ({ states, selection, onSelec
           <button
             type="button"
             onClick={() => onSelect({ kind: 'br' })}
-            className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-lg bg-white/95 px-2.5 py-1.5 text-xs font-bold text-slate-700 shadow-md border border-slate-200 hover:bg-white active:scale-95 transition-all anim-fade cursor-pointer"
+            className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-lg bg-white/95 px-2.5 py-1.5 text-xs font-bold text-slate-700 shadow-md border border-slate-200 hover:bg-white active:scale-95 transition-all anim-fade cursor-pointer z-10"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Brasil
@@ -198,7 +266,7 @@ export const BrazilMap: React.FC<BrazilMapProps> = ({ states, selection, onSelec
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-slate-100 px-3 py-2 text-[11px] font-semibold text-slate-600">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-slate-100 px-3 py-2 text-[11px] font-semibold text-slate-600">
         {legend.map((l) => (
           <span key={l.nome} className="inline-flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: l.cor }} />
@@ -209,7 +277,9 @@ export const BrazilMap: React.FC<BrazilMapProps> = ({ states, selection, onSelec
           <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: NEUTRAL }} />
           sem votos
         </span>
-        <span className="ml-auto hidden sm:inline text-slate-400 font-medium">Toque num estado para ver a votação</span>
+        <span className="ml-auto text-slate-400 font-medium">
+          💡 Cores translúcidas = apuração inicial • Cores sólidas = urnas consolidadas
+        </span>
       </div>
     </div>
   );
