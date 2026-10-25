@@ -1,0 +1,74 @@
+﻿@import 'tailwindcss';
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background-color: #f8fafc;
+  color: #0f172a;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom light cards & shadows */
+.light-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+}
+
+.light-card-hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.light-card-hover:hover {
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.06), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+  transform: translateY(-1px);
+}
+
+/* Smooth expansion animation */
+.accordion-content {
+  transition: max-height 0.35s ease-out, opacity 0.3s ease-out;
+}
+
+/* Interactive SVG Map Styles */
+.map-uf {
+  cursor: pointer;
+  transition: fill 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 0.25s ease, 
+              stroke 0.2s ease, 
+              stroke-width 0.2s ease, 
+              filter 0.2s ease;
+}
+
+.map-uf:hover {
+  filter: brightness(1.08) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+  stroke: #0f172a !important;
+  stroke-width: 2px !important;
+}
+
+.map-uf-selected {
+  stroke: #0f172a !important;
+  stroke-width: 2.5px !important;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25));
+}
+
+@keyframes mapFlash {
+  0% { filter: brightness(1.4) drop-shadow(0 0 8px rgba(59, 130, 246, 0.8)); }
+  100% { filter: none; }
+}
+
+.map-uf-flash {
+  animation: mapFlash 1.5s ease-in-out infinite alternate;
+}
+
+.anim-fade {
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
