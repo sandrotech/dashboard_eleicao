@@ -1,4 +1,4 @@
-﻿# Estágio 1: Build da aplicação React SPA
+# Estágio 1: Build da aplicação React SPA
 FROM node:22-alpine AS builder
 
 WORKDIR /app
@@ -24,14 +24,14 @@ FROM nginx:alpine AS runner
 # Remove a página padrão do Nginx
 RUN rm -rf /etc/nginx/conf.d/default.conf
 
-# Copia a configuração do Nginx com suporte a SPA
+# Copia a configuração do Nginx com suporte a SPA e portas 80 e 3000
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copia a build do estágio anterior
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expõe a porta 80 para o proxy reverso do Coolify
-EXPOSE 80
+# Expõe as portas 80 e 3000 para compatibilidade total com o Coolify Traefik
+EXPOSE 80 3000
 
 # Inicia o servidor Nginx
 CMD ["nginx", "-g", "daemon off;"]
