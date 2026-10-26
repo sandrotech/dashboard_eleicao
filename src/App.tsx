@@ -6,16 +6,17 @@ import { Navbar } from './components/Navbar';
 import { HeaderStats } from './components/HeaderStats';
 import { CandidateDuel } from './components/CandidateDuel';
 import { CandidatesList } from './components/CandidatesList';
+import { WinnerCelebrationModal } from './components/WinnerCelebrationModal';
 import { TimelineChart } from './components/TimelineChart';
 import { BrazilMap, type LegendItem } from './components/BrazilMap';
 import { useStatesData } from './hooks/useStatesData';
 import { useVisitorTracker } from './hooks/useVisitorTracker';
 import { REGIONS, UF_BY_SIGLA, type RegionId } from './data/geo';
-import { AlertTriangle, RefreshCw, ShieldCheck, MapPin, Compass, ArrowRight, RotateCcw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, ShieldCheck, MapPin, Compass, ArrowRight, RotateCcw, Trophy } from 'lucide-react';
 
 const MAP_LEGEND: LegendItem[] = [
   { nome: 'Lula (PT)', cor: '#DC2626' },
-  { nome: 'FlÃ¡vio Bolsonaro (PL)', cor: '#2563EB' },
+  { nome: 'FlÃƒÂ¡vio Bolsonaro (PL)', cor: '#2563EB' },
 ];
 
 export const App: React.FC = () => {
@@ -32,9 +33,19 @@ export const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [showWinnerModal, setShowWinnerModal] = useState<boolean>(true);
+  const [hasDismissedWinner, setHasDismissedWinner] = useState<boolean>(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const prevVotesRef = useRef<number>(0);
+
+  const isWinnerDeclared = Boolean(
+    data?.lider &&
+    (data.matematicamenteEleito ||
+     data.lider.eleito ||
+     data.lider.situacao?.toLowerCase().includes('eleito') ||
+     (data.stats.percSecoesNum >= 98 && data.diferencaVotos > 0))
+  );
 
   // Carrega dados de todos os estados para o mapa interativo
   const { states, loading: statesLoading, changed } = useStatesData(turno, true, refreshSignal, false);
@@ -53,7 +64,7 @@ export const App: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Erro ao carregar dados do TSE:', err);
-      setError(err?.message || 'Erro ao conectar Ã  API pÃºblica do TSE.');
+      setError(err?.message || 'Erro ao conectar ÃƒÂ  API pÃƒÂºblica do TSE.');
     } finally {
       setIsLoading(false);
       setIsInitialLoading(false);
@@ -86,7 +97,7 @@ export const App: React.FC = () => {
     };
   }, [refreshInterval, loadData]);
 
-  // Sincroniza seleÃ§Ã£o do mapa com o dropdown de UF
+  // Sincroniza seleÃƒÂ§ÃƒÂ£o do mapa com o dropdown de UF
   const handleSelectMap = (s: MapSelection) => {
     setSelection(s);
     if (s.kind === 'br') {
@@ -160,21 +171,21 @@ export const App: React.FC = () => {
             <div className='w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center animate-spin'>
               <RefreshCw className='w-5 h-5 text-slate-600' />
             </div>
-            <p className='text-xs font-semibold text-slate-600'>Carregando apuraÃ§Ã£o oficial do TSE...</p>
+            <p className='text-xs font-semibold text-slate-600'>Carregando apuraÃƒÂ§ÃƒÂ£o oficial do TSE...</p>
           </div>
         ) : (
           <div className='grid grid-cols-1 lg:grid-cols-12 gap-3.5 lg:gap-6 items-start'>
             
-            {/* COLUNA ESQUERDA: Mapa Interativo do Brasil & RegiÃµes */}
+            {/* COLUNA ESQUERDA: Mapa Interativo do Brasil & RegiÃƒÂµes */}
             <section
               className={'lg:col-span-7 space-y-3 ' + (activeTab === 'mapa' ? 'block' : 'hidden lg:block')}
             >
-              {/* Barra de Filtros por RegiÃ£o */}
+              {/* Barra de Filtros por RegiÃƒÂ£o */}
               <div className='p-2 sm:p-2.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs'>
                 <div className='flex items-center justify-between mb-1.5 px-1'>
                   <span className='text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1'>
                     <Compass className='w-3.5 h-3.5 text-slate-400' />
-                    Explorar por RegiÃ£o
+                    Explorar por RegiÃƒÂ£o
                   </span>
                   {selection.kind !== 'br' && (
                     <button
@@ -182,7 +193,7 @@ export const App: React.FC = () => {
                       className='inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-md transition-colors cursor-pointer'
                     >
                       <RotateCcw className='w-3 h-3' />
-                      VisÃ£o Geral (Brasil)
+                      VisÃƒÂ£o Geral (Brasil)
                     </button>
                   )}
                 </div>
@@ -224,7 +235,7 @@ export const App: React.FC = () => {
                 legend={MAP_LEGEND}
               />
 
-              {/* Card de InformaÃ§Ãµes RÃ¡pidas do Estado ou RegiÃ£o Focada */}
+              {/* Card de InformaÃƒÂ§ÃƒÂµes RÃƒÂ¡pidas do Estado ou RegiÃƒÂ£o Focada */}
               {focusedUfMeta && focusedUfData && (
                 <div className='p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between gap-3 animate-in fade-in duration-300'>
                   <div>
@@ -236,7 +247,7 @@ export const App: React.FC = () => {
                         {focusedUfMeta.nome}
                       </h4>
                       <span className='text-[11px] font-semibold text-slate-500'>
-                        â€¢ Urnas: {focusedUfData.stats.percSecoes}%
+                        Ã¢â‚¬Â¢ Urnas: {focusedUfData.stats.percSecoes}%
                       </span>
                     </div>
 
@@ -264,15 +275,15 @@ export const App: React.FC = () => {
               )}
             </section>
 
-            {/* COLUNA DIREITA: ApuraÃ§Ã£o das Urnas & Duelo dos Candidatos */}
+            {/* COLUNA DIREITA: ApuraÃƒÂ§ÃƒÂ£o das Urnas & Duelo dos Candidatos */}
             <section
               className={'lg:col-span-5 space-y-3.5 ' + (activeTab === 'painel' ? 'block' : 'hidden lg:block')}
             >
-              {/* BotÃ£o de atalho para o mapa no mobile */}
+              {/* BotÃƒÂ£o de atalho para o mapa no mobile */}
               <div className='lg:hidden p-2 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-between'>
                 <span className='text-xs font-bold text-slate-700 flex items-center gap-1.5'>
                   <MapPin className='w-3.5 h-3.5 text-emerald-600' />
-                  VisualizaÃ§Ã£o GeogrÃ¡fica
+                  VisualizaÃƒÂ§ÃƒÂ£o GeogrÃƒÂ¡fica
                 </span>
                 <button
                   onClick={() => setActiveTab('mapa')}
@@ -288,6 +299,22 @@ export const App: React.FC = () => {
 
                   {turno === 2 && data.candidatos.length >= 2 && (
                     <>
+                      {isWinnerDeclared && data.lider && hasDismissedWinner && (
+                        <button
+                          onClick={() => { setShowWinnerModal(true); setHasDismissedWinner(false); }}
+                          className='w-full p-2.5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 text-amber-900 text-xs font-bold flex items-center justify-between gap-2 shadow-xs hover:from-amber-100 hover:to-orange-100 active:scale-99 transition-all cursor-pointer animate-in fade-in'
+                        >
+                          <div className='flex items-center gap-2'>
+                            <Trophy className='w-4 h-4 text-amber-600 shrink-0' />
+                            <span>
+                              🏆 <strong>{data.lider.nomeUrna}</strong> eleito Presidente ({data.lider.perc}%)
+                            </span>
+                          </div>
+                          <span className='text-[11px] text-amber-700 underline font-semibold shrink-0'>
+                            Rever destaque
+                          </span>
+                        </button>
+                      )}
                       <CandidateDuel
                         cand1={data.lider}
                         cand2={data.segundoColocado}
@@ -328,9 +355,23 @@ export const App: React.FC = () => {
       <footer className='border-t border-slate-200/80 bg-white py-3 text-center text-[10px] text-slate-400 mt-auto'>
         <div className='w-full max-w-7xl mx-auto px-4 flex items-center justify-center gap-1.5'>
           <ShieldCheck className='w-3.5 h-3.5 text-emerald-600' />
-          <span>Dados Oficiais â€¢ Tribunal Superior Eleitoral (TSE)</span>
+          <span>Dados Oficiais Ã¢â‚¬Â¢ Tribunal Superior Eleitoral (TSE)</span>
         </div>
       </footer>
+
+      {/* Modal em destaque do Presidente Vencedor */}
+      {isWinnerDeclared && data?.lider && showWinnerModal && !hasDismissedWinner && (
+        <WinnerCelebrationModal
+          winner={data.lider}
+          runnerUp={data.segundoColocado}
+          stats={data.stats}
+          matematicamenteEleito={data.matematicamenteEleito}
+          onClose={() => {
+            setShowWinnerModal(false);
+            setHasDismissedWinner(true);
+          }}
+        />
+      )}
     </div>
   );
 };
